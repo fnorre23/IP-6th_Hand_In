@@ -8,6 +8,19 @@ import os
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
 serverAddressPort = ("127.0.0.1", 5052)
 
+backends = [
+  'opencv', 
+  'ssd', 
+  'dlib', 
+  'mtcnn', 
+  'fastmtcnn',
+  'retinaface', 
+  'mediapipe',
+  'yolov8',
+  'yunet',
+  'centerface',
+]
+
 def displayText(image, text):
     font = cv2.FONT_HERSHEY_SIMPLEX
     cv2.putText(image, text, (10, 30), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
@@ -24,16 +37,21 @@ def get_emotion(frame):
     cv2.imwrite('emotion_image.png', frame)
     im_path= 'emotion_image.png'
 
-    # facial analysis
-    objs = dp.analyze(
-    img_path = im_path, 
-    actions = ['emotion'],
-    )
-
+    try:
+        # facial analysis
+        objs = dp.analyze(
+        img_path = im_path, 
+        detector_backend = backends[8],
+        actions = ['emotion'],
+        )
+    except Exception:
+        return "No face detected"
+        
+    
     # Extracting emotion 
     for obj in objs:
         dominant_emotion = obj['dominant_emotion']
-    
+        
     # Send emotion to Unity
     sock.sendto(str.encode(dominant_emotion), serverAddressPort)
 
@@ -55,22 +73,26 @@ while True:
     key = cv2.waitKey(3) & 0xFF
     if key == ord('q'):
         break
-
-    if key == ord('w'):
-        emotion = get_emotion(frame)
+    
+    # Take the frame, and analyze for it emotion
+    emotion = get_emotion(frame)
 
     # Check if variable exists, and then display correct emotion
     if 'emotion' in locals():
         frame = displayText(frame, emotion)
+
+        # Sending emotion to Unity
+        sock.sendto(str.encode(emotion), serverAddressPort)
     else: 
-        frame = displayText(frame, 'No Emotion')
-    
+        frame = displayText(frame, 'No emotion')
+        sock.sendto(str.encode("No emotion"), serverAddressPort)
+
     # Displaying instructions
     frame = displayTextBelow(frame, 'Press w to calc emotion')
 
     cv2.imshow('Live feed', frame)    
 
-
+# Closing application and releasing resources
 cap.release()
 cv2.destroyAllWindows()
 sock.close()
