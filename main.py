@@ -87,9 +87,6 @@ while True:
         frame = displayText(frame, 'No emotion')
         sock.sendto(str.encode("No emotion"), serverAddressPort)
 
-    # Displaying instructions
-    frame = displayTextBelow(frame, 'Press w to calc emotion')
-
     cv2.imshow('Live feed', frame)    
 
 # Closing application and releasing resources
